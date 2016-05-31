@@ -43,3 +43,14 @@ $ docker run --name some-nginx --volumes-from some-data --link some-ruby:app \
 ```console
 $ docker-machine ssh some-machine "curl -H 'Host: www.example.com' some-machine:8080"
 ```
+
+# Docker Compose
+Para arrancar todos los contenedores (```-d``` para *background* )
+
+```console
+$ docker-compose up -d
+```
+también es útil la opción ```no-recreate```.
+
+La dependencia especificada con la directiva ```depends_on``` no espera que el servicio esté *ready* sólo que se haya inicializado.
+De ahí el bucle de espera en ```some-ruby``` para garantizar que el fichero ```config/database.yml``` está copiado.

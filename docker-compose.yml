@@ -1,8 +1,5 @@
 version: '2'
 
-volumes:
-  some-data: {}
-
 services:
   some-git:
     container_name: some-git
@@ -11,28 +8,27 @@ services:
       - some-data:/usr/src/myapp
     working_dir: /usr/src/myapp
     command:
-      git clone https://github.com/railstutorial/sample_app_rails_4.git
+      /bin/bash -c \
+        'git clone https://github.com/carmelocuenca/social_app.git &&
+        cd social_app &&
+        cp config/database.yml.example config/database.yml'
 
   some-ruby:
     depends_on:
       - some-git
-    image: ruby:2.0
-    ports:
-      - 3000:3000
+    build: .
     volumes:
       - some-data:/usr/src/myapp
-    working_dir: /usr/src/myapp/sample_app_rails_4
+    working_dir: /usr/src/myapp/social_app
     command:
-      sh -c \
-        'apt-get update &&
-        apt-get install -y nodejs &&
-        rm -rf /var/lib/apt/lists/* &&
+      /bin/bash -c \
+        'until [ -f config/database.yml ]; do echo "social_app repository is unavailable - waiting"; sleep 1; done &&
         bundle install --without production &&
-        cp config/database.yml.example config/database.yml &&
         rake db:migrate &&
         rake db:test:prepare &&
         rake &&
-        rails server -d'
+        rails server'
+
   some-nginx:
     depends_on:
       - some-ruby
@@ -44,3 +40,6 @@ services:
     volumes:
       - some-data:/usr/src/myapp
       - ./etc/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  some-data: {}
