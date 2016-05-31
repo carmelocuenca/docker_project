@@ -54,3 +54,11 @@ también es útil la opción ```no-recreate```.
 
 La dependencia especificada con la directiva ```depends_on``` no espera que el servicio esté *ready* sólo que se haya inicializado.
 De ahí el bucle de espera en ```some-ruby``` para garantizar que el fichero ```config/database.yml``` está copiado.
+
+
+
+# Contenedor PostgreSQL
+
+El fichero ```.yml``` de composición incluye ahora un contenedor *PostgreSQL*.
+Este enlace con el contenedor de *Ruby* mediante en link *db*.
+El posible error de sincronización, el contenedor de *Ruby* inicie antes que el de *PostgreSQL* y la tarea aborte está resulta mediante el flag de ```restar: always```.

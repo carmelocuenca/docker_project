@@ -11,23 +11,43 @@ services:
       /bin/bash -c \
         'git clone https://github.com/carmelocuenca/social_app.git &&
         cd social_app &&
-        cp config/database.yml.example config/database.yml'
+        cp config/database.yml.postgresql config/database.yml'
+
+  some-postgres:
+    image: postgres
+    volumes:
+      - some-pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=$POSTGRES_USER
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+    restart: always
 
   some-ruby:
     depends_on:
       - some-git
+      - some-postgres
     build: .
     volumes:
       - some-data:/usr/src/myapp
+    links:
+      - some-postgres:db
     working_dir: /usr/src/myapp/social_app
+    environment:
+      - POSTGRES_USER=$POSTGRES_USER
+      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+      - WEB_CONCURRENCY=2 # How many worker processes to run
+      - RAILS_MAX_THREADS=16 # Configure to be the maximum number of threads
+    # restart: always
     command:
       /bin/bash -c \
         'until [ -f config/database.yml ]; do echo "social_app repository is unavailable - waiting"; sleep 1; done &&
         bundle install --without production &&
+        rake db:setup &&
         rake db:migrate &&
         rake db:test:prepare &&
         rake &&
-        rails server'
+        rake db:populate &&
+        puma -C config/puma.rb'
 
   some-nginx:
     depends_on:
@@ -40,6 +60,8 @@ services:
     volumes:
       - some-data:/usr/src/myapp
       - ./etc/nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: always
 
 volumes:
-  some-data: {}
+  some-data: {} # git repository
+  some-pgdata: {} # posgres directory
