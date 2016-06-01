@@ -37,7 +37,7 @@ services:
       - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
       - WEB_CONCURRENCY=2 # How many worker processes to run
       - RAILS_MAX_THREADS=16 # Configure to be the maximum number of threads
-    # restart: always
+    restart: always
     command:
       /bin/bash -c \
         'until [ -f config/database.yml ]; do echo "social_app repository is unavailable - waiting"; sleep 1; done &&
