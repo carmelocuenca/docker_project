@@ -1,3 +1,70 @@
+# Instalación
+
+## Prerrequisitos
+
+- [VirtualBox](https://www.virtualbox.org/)
+- [Docker](https://www.docker.com/) La guía de instalación de Docker está en https://docs.docker.com/engine/installation/
+- [Docker Machine](https://docs.docker.com/machine/). La guía de instalación de Docker Machine está en https://docs.docker.com/machine/install-machine/
+
+
+## Crea una máquina virtual
+```console
+$ docker-machine create -d virtualbox some-machine
+```
+
+No olvidar para establecer el entorno de trabajo en el *shell*
+
+```console
+$ eval $(docker-machine env some-machine)
+```
+
+### Sólo para máquinas físicas con ```/home```
+Toda esta guerra es para montar $HOME en la máquina virtual que corre *Docker*-
+
+- Crear un *shared folder* con VirtualBox en la máquina virtual.
+Para ello hay que parar la MV.
+
+```console
+$ docker-machine stop $DOCKER_MACHINE_NAME
+$ VBoxManage sharedfolder add $DOCKER_MACHINE_NAME --name $USER --hostpath $HOME
+$ docker-machine start $DOCKER_MACHINE_NAME
+```
+- Restablecer las variables de entorno
+```console
+$ eval $(docker-machine env $DOCKER_MACHINE_NAME)
+```
+
+
+- Montar el *shared folder* en la máquina virtual, primero creamos el directorio para montar
+
+```console
+docker-machine ssh $DOCKER_MACHINE_NAME "sudo ls $HOME"
+```
+
+- Comprobar que funciona, listando el contenido de ```$HOME```
+
+## Componer la aplicación
+
+
+Declara un conjunto de variables de entorno para *PostgresSQL*, por ejemplo
+
+```console
+export POSTGRES_USER=postgres
+export POSTGRES_PASSWORD=mysecretpassword
+```
+
+```console
+$ git clone https://github.com/carmelocuenca/docker_project.git
+$ cd docker_project
+$ docker-compose up -d
+```
+
+## Prueba de la aplicación
+```console
+$ curl $(docker-machine ip some-machine):8080
+```
+
+# De aquí para abajo detalles de implementación
 # Linux, NGINX, PostgreSQL y Rails (LEPR)
 
 Proyecto de ejemplo para desplegar una aplicación primero en local, luego en *AWS*.
@@ -122,5 +189,28 @@ Y después de un buen rato, localizar la ip en la consola web y acceder por el p
 Y para borrar la máquina
 
 ```console
-docker-machine rm -f aws01
+$ docker-machine rm -f aws01
+```
+
+
+# Comandos útiles
+
+```console
+# Crea un MV para Docker
+$ docker-machine -D create -d virtualbox some-machine
+
+# Borra una MV
+$ docker-machine rm some-machine
+
+# Obtiene la ip de la MV
+$ docker-machine ip some-machine
+
+# Lista las MVs
+$ docker-machine ls
+
+# Establece el entrono para trabajar con la máquina virtual (puede haber varias)
+$ eval $(docker-machine env some-machine)
+
+# Bora todos los contenedores con vólumenes incluidos
+$ docker rm -f -v $(docker ps -aq)
 ```
