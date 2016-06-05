@@ -12,20 +12,9 @@ services:
         'git clone https://github.com/carmelocuenca/social_app.git &&
         cd social_app &&
         cp config/database.yml.postgresql config/database.yml'
-
-  some-postgres:
-    image: postgres
-    volumes:
-      - some-pgdata:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_USER=$POSTGRES_USER
-      - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
-    restart: always
-
   some-ruby:
     depends_on:
       - some-git
-      - some-postgres
     build: ruby/
     volumes:
       - some-data:/usr/src/myapp
@@ -50,8 +39,6 @@ services:
         puma -C config/puma.rb'
 
   some-nginx:
-    depends_on:
-      - some-ruby
     build: nginx/
     ports:
       - 8080:80
@@ -63,4 +50,3 @@ services:
 
 volumes:
   some-data: {} # git repository
-  some-pgdata: {} # posgres directory

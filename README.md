@@ -9,7 +9,7 @@
 
 ## Crea una máquina virtual
 ```console
-$ docker-machine create -d virtualbox some-machine
+$ docker-machine create --virtualbox-disk-size "32768"  -d virtualbox some-machine
 ```
 
 No olvidar para establecer el entorno de trabajo en el *shell*
@@ -192,6 +192,39 @@ Y para borrar la máquina
 $ docker-machine rm -f aws01
 ```
 
+# Iniciación al descubrimiento
+
+Hasta aquí los tres contenedores corren en una máquina anfitrión.
+La idea ahora es trabajar con dos máquinas mínimo.
+El contenedor *PostgreSQL* funcionará en una máquina independiente comp primer pasao para el escalado (servidor de base de datos sólo puede haber una).
+
+Haremos dos ficheros: docker-compose1 y docker-compose2; uno para cada máquina.
+En la máquina1 irá el servidor de base de datos. En la dos *NGINX* y *Rails*.
+
+## Creación 2 MV's
+
+```console
+$ docker-machine create --virtualbox-disk-size "20000"  -d virtualbox some-machine1
+$ HOST1=$(docker-machine ip some-machine1)
+$ docker-machine create --virtualbox-disk-size "20000"  -d virtualbox some-machine2
+$ HOST2=$(docker-machine ip some-machine2)
+```
+
+## Setup del servidor *PostgreSQL*
+
+El fichero docker-compose1.yml contiene información relevante al contenedor *PostgreSQL*. Información del contenedor y un volumen de datos.
+
+
+Las variables de *shell* ```HOST1```y ```HOST2``` son instanciadas para comodidad cuando usemos otros comandos.
+
+Para levantar la infraestructura en ```some-machine1```
+
+```console
+$ . ~/.postgres/credentials
+$ eval $(docker-machine env some-machine1)
+$ docker-compose -f docker-compose1.yml up
+```
+Para comprobar la conexión con el
 
 # Comandos útiles
 
