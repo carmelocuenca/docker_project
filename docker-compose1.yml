@@ -1,9 +1,10 @@
 # Fichero de composición para la base de datos
+# docker-compose -f docker-compose1.yml up
 version: '2'
 
 services:
   some-postgres:
-    image: postgres
+    build: postgres
     volumes:
       - some-pgdata:/var/lib/postgresql/data
     environment:
@@ -12,7 +13,7 @@ services:
       - POSTGRES_PORT_5432_TCP_PORT=5432
     restart: always
 
-  some-ambassador:
+  real-postgres-ambassador:
     image: svendowideit/ambassador
     environment:
       - DB_PORT_5432_TCP=tcp://some-postgres:5432 # ambassador's trick

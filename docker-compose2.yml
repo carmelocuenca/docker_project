@@ -1,40 +1,36 @@
 version: '2'
 
 services:
-  some-git:
-    container_name: some-git
-    image: buildpack-deps:jessie
-    volumes:
-      - some-data:/usr/src/myapp
-    working_dir: /usr/src/myapp
-    command:
-      /bin/bash -c \
-        'git clone https://github.com/carmelocuenca/social_app.git &&
-        cd social_app &&
-        cp config/database.yml.postgresql config/database.yml'
+  postgres-ambassador:
+    image: svendowideit/ambassador
+    environment:
+      # ambassador's trick
+      - DB_PORT_5432_TCP=tcp://$HOST1:5432
+    expose:
+      - 5432
+    restart: always
+
   some-ruby:
-    depends_on:
-      - some-git
-    build: ruby/
+    image: carmelocuenca/social-app:0.1
     volumes:
-      - some-data:/usr/src/myapp
+      - some-data:/usr/src/app
     links:
-      - some-postgres:db
-    working_dir: /usr/src/myapp/social_app
+      - postgres-ambassador:db
+    working_dir: /usr/src/app/
     environment:
       - POSTGRES_USER=$POSTGRES_USER
       - POSTGRES_PASSWORD=$POSTGRES_PASSWORD
-      - WEB_CONCURRENCY=2 # How many worker processes to run
+      - WEB_CONCURRENCY=1 # How many worker processes to run
       - RAILS_MAX_THREADS=16 # Configure to be the maximum number of threads
     restart: always
+    # rake db:test:prepare &&
+    # rake &&
     command:
       /bin/bash -c \
-        'until [ -f config/database.yml ]; do echo "social_app repository is unavailable - waiting"; sleep 1; done &&
-        bundle install --without production &&
+        'cp config/database.yml.postgresql config/database.yml &&
+        until PGPASSWORD="$POSTGRES_PASSWORD" psql -h "db" -U "$POSTGRES_USER" -c "\l"; do >&2 echo "Postgres is unavailable - sleeping"; sleep 1; done &&
         rake db:setup &&
         rake db:migrate &&
-        rake db:test:prepare &&
-        rake &&
         rake db:populate &&
         puma -C config/puma.rb'
 
@@ -45,8 +41,8 @@ services:
     links:
       - some-ruby:app
     volumes:
-      - some-data:/usr/src/myapp
+      - some-data:/usr/src/app
     restart: always
 
 volumes:
-  some-data: {} # git repository
+  some-data: {} # shared repository

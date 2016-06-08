@@ -192,7 +192,9 @@ Y para borrar la máquina
 $ docker-machine rm -f aws01
 ```
 
-# Iniciación al descubrimiento
+# Iniciación al descubrimiento. Solución con *Ambassador*
+
+La solución descrita está basada en el patrón descrito en la url https://docs.docker.com/engine/admin/ambassador_pattern_linking/
 
 Hasta aquí los tres contenedores corren en una máquina anfitrión.
 La idea ahora es trabajar con dos máquinas mínimo.
@@ -203,12 +205,25 @@ En la máquina1 irá el servidor de base de datos. En la dos *NGINX* y *Rails*.
 
 ## Creación 2 MV's
 
+En un terminal
+
 ```console
-$ docker-machine create --virtualbox-disk-size "20000"  -d virtualbox some-machine1
-$ HOST1=$(docker-machine ip some-machine1)
-$ docker-machine create --virtualbox-disk-size "20000"  -d virtualbox some-machine2
-$ HOST2=$(docker-machine ip some-machine2)
+$ docker-machine create --virtualbox-disk-size "32768"  -d virtualbox some-machine1
+$ eval $(docker-machine env some-machine1)
 ```
+
+En otro terminal
+
+```console
+$ docker-machine create --virtualbox-disk-size "32768"  -d virtualbox some-machine2
+$ eval $(docker-machine env some-machine2)
+```
+
+En los dos terminales
+
+```console
+$ export HOST1=$(docker-machine ip some-machine1)
+$ export HOST2=$(docker-machine ip some-machine2)
 
 ## Setup del servidor *PostgreSQL*
 
@@ -220,11 +235,95 @@ Las variables de *shell* ```HOST1```y ```HOST2``` son instanciadas para comodida
 Para levantar la infraestructura en ```some-machine1```
 
 ```console
+# Postgres' credentials
 $ . ~/.postgres/credentials
 $ eval $(docker-machine env some-machine1)
 $ docker-compose -f docker-compose1.yml up
 ```
-Para comprobar la conexión con el
+
+
+## Infraestructura *PostgreSQL* con *Ambasador*
+
+```console
+# Postgres' credentials
+$ docker-compose -f docker-compose1.yml up
+```
+
+Ver el truco en el fichero ```docker-compose1.yml``` para la redirección del puerto 5432.
+
+## Infraestructura *NGINX*, *Rails* con *Ambasador*
+
+```console
+# Postgres' credentials
+
+$ . ~/.postgres/credentials
+$ docker-compose -f docker-compose2.yml up
+```
+## Comprobación funcionamiento local
+
+```console
+$ curl $HOST2:8080
+```
+
+
+## Despliegue en la nube AWS
+
+
+```console
+$ docker-machine -D create --driver amazonec2 \
+  --amazonec2-access-key $AWS_ACCESS_KEY_ID \
+  --amazonec2-secret-key $AWS_SECRET_ACCESS_KEY \
+  --amazonec2-vpc-id $AWS_VPC_ID \
+  --amazonec2-region $AWS_DEFAULT_REGION \
+  --amazonec2-zone $AWS_ZONE aws01
+```
+El flag ```-D``` habilita el modo *debug*.
+
+Y una vez que esta *running* (tarda unos 6 minutos)
+
+```console
+$ eval $(docker-machine env aws01)
+$ docker-compose -f docker-compose1.yml up
+```
+
+Lo mismo para la otra MV
+
+```console
+$ docker-machine -D create --driver amazonec2 \
+  --amazonec2-access-key $AWS_ACCESS_KEY_ID \
+  --amazonec2-secret-key $AWS_SECRET_ACCESS_KEY \
+  --amazonec2-vpc-id $AWS_VPC_ID \
+  --amazonec2-region $AWS_DEFAULT_REGION \
+  --amazonec2-zone $AWS_ZONE aws02
+```
+El flag ```-D``` habilita el modo *debug*.
+
+Y una vez que esta *running* (tarda unos 6 minutos)
+
+```console
+$ eval $(docker-machine env aws02)
+$ docker-compose -f docker-compose2.yml up
+```
+
+
+¿ Problemas ? La MV que corre *PostgreSQL* debe tener abierto el puerto 5432.
+En dos sitios: en el grupo de seguridad haciéndolo accesible para la *VPC* y en la máquina con
+
+```console
+$ sudo ufw allow 5432
+# sudo ufw allow proto tcp from aaa.bbb.ccc.ddd to any port 5432
+```
+
+(Realmente debería ser algo más elaborado)
+
+
+## TravisCI
+La aplicación *social_app* incluye ahora un fichero .travis.yml que una vez pasados los test, despliegue la imagen en *Docker Hub*.
+Esa imagen es luego utilizada por *docker-compose* para componer la aplicaicón *Rails*.
+
+# Trabajos pendientes
+
+Las dos MVs tienen ip públicas, cuando realmente la de *PostgreSQL* debería tener una *IP* privada de la *VPC*. Cambiarla para que sea privada.
 
 # Comandos útiles
 
