@@ -6,6 +6,22 @@
 - [Docker](https://www.docker.com/) La guía de instalación de Docker está en https://docs.docker.com/engine/installation/
 - [Docker Machine](https://docs.docker.com/machine/). La guía de instalación de Docker Machine está en https://docs.docker.com/machine/install-machine/
 
+## Scripts para setup la infraestructura
+
+Para levantar la infraestructura
+```console
+$ sh up.sh
+```
+
+Para probar la infraestructura
+```console
+$ sh check.sh
+```
+
+Para destruir la infraestructura
+```console
+$ sh down.sh
+```
 
 ## Crea una máquina virtual
 ```console
@@ -38,13 +54,18 @@ $ eval $(docker-machine env $DOCKER_MACHINE_NAME)
 - Montar el *shared folder* en la máquina virtual, primero creamos el directorio para montar
 
 ```console
+docker-machine ssh $DOCKER_MACHINE_NAME "mkdir -p $HOME"
+docker-machine ssh $DOCKER_MACHINE_NAME "sudo ls $HOME"
+docker-machine ssh $DOCKER_MACHINE_NAME "sudo mount -t vboxsf $USER $HOME"
 docker-machine ssh $DOCKER_MACHINE_NAME "sudo ls $HOME"
 ```
 
 - Comprobar que funciona, listando el contenido de ```$HOME```
 
 ## Componer la aplicación
-
+```console
+docker-machine ssh $DOCKER_MACHINE_NAME "sudo ls $HOME"
+```
 
 Declara un conjunto de variables de entorno para *PostgresSQL*, por ejemplo
 
@@ -132,6 +153,11 @@ Antes de poner en marcha los contendeores, hay que establecer las credenciales e
 ```console
 export POSTGRES_USER=postgres
 export POSTGRES_PASSWORD=mysecretpassword
+```
+
+Para probar la conexión con el servicio de base de datos
+```console
+$ PGPASSWORD=$POSTGRES_PASSWORD psql -h $HOST1 -p 5432 -U $POSTGRES_USER -c "\q"
 ```
 
 # Docker Compose

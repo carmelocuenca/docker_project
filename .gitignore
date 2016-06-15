@@ -1,2 +1,6 @@
 .bundle/
+tmp/
 .credentials
+~*
+.~*
+*.pdf

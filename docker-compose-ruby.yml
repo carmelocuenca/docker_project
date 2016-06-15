@@ -1,11 +1,13 @@
 version: '2'
 
 services:
+  # docker run --rm -p 9999:5432 -e DB_PORT_5432_TCP=tcp://$POSTGRES:5432 \
+  #   svendowideit/ambassador
   postgres-ambassador:
     image: svendowideit/ambassador
     environment:
       # ambassador's trick
-      - DB_PORT_5432_TCP=tcp://$HOST1:5432
+      - DB_PORT_5432_TCP=tcp://$POSTGRES:5432
     expose:
       - 5432
     restart: always
@@ -28,7 +30,7 @@ services:
     command:
       /bin/bash -c \
         'cp config/database.yml.postgresql config/database.yml &&
-        until PGPASSWORD="$POSTGRES_PASSWORD" psql -h "db" -U "$POSTGRES_USER" -c "\l"; do >&2 echo "Postgres is unavailable - sleeping"; sleep 1; done &&
+        until PGPASSWORD="$POSTGRES_PASSWORD" psql -h "db" -p 5432 -U "$POSTGRES_USER" -c "\l"; do >&2 echo "Postgres is unavailable - sleeping"; sleep 1; done &&
         rake db:setup &&
         rake db:migrate &&
         rake db:populate &&
