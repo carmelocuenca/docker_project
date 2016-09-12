@@ -1,12 +1,7 @@
 #!/bin/bash
 
-eval $(docker-machine env etcd-machine)
-ETCD=$(docker-machine ip etcd-machine)
-# check etcd service
-curl -s http://$ETCD:2379/v2/members
-curl -s http://$ETCD:3379/v2/members
-curl -s http://$ETCD:4379/v2/members
-curl -s http://$ETCD:8080/v2/members
+eval $(docker-machine env consul-machine)
+curl $(docker-machine ip consul-machine)):8500/v1/catalog/services
 
 eval $(docker-machine env postgres-machine)
 export POSTGRES_USER=${POSTGRES_USER:-postgres}

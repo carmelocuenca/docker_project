@@ -1,0 +1,15 @@
+#
+# docker-machine create -d virtualbox consul-machine
+# export CONSULIP=$(docker-machine ip consul-machine)
+# docker-compose -f docker-compose-consul.yml up
+#
+# El lío, necesitamos la dicección de la máquina anfitrión
+# y componer los nodos del cluster
+#
+version: '2'
+services:
+  consul:
+    image: gliderlabs/consul
+    network_mode: host
+    command:
+      "agent -ui -data-dir /data -server -bind $CONSULIP -client $CONSULIP -bootstrap"
